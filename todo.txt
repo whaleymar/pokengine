@@ -1,0 +1,12 @@
+short term:
+- full logging
+- const correctness for most classes
+- terastalization
+- methods for Effect subclasses
+
+medium term:
+- recoil
+- moves that damage you if you miss
+
+long term:
+- doubles

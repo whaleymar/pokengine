@@ -27,6 +27,7 @@ enum class Type {
     ICE = (1u << 17)
 };
 
+// could do macro for these
 inline Type operator|(Type a, Type b) {
     return static_cast<Type>(static_cast<u32>(a) | static_cast<u32>(b));
 }
@@ -57,12 +58,14 @@ inline bool operator==(Type a, u32 b) {
 
 bool isType(Type fullType, Type type);
 
+f32 getEffectiveness(Type source, Type target);
+
 namespace Effectiveness {
 
-const float INEFFECTIVE = 0.0;
-const float NOT_VERY = 0.5;
-const float NEUTRAL = 1.0;
-const float SUPER = 2.0;
+const f32 INEFFECTIVE = 0.0;
+const f32 NOT_VERY = 0.5;
+const f32 NEUTRAL = 1.0;
+const f32 SUPER = 2.0;
 }  // namespace Effectiveness
 
 }  // namespace engine

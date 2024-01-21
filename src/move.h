@@ -1,5 +1,6 @@
 #pragma once
 
+#include "battle.h"
 #include "dtypes.h"
 #include "pokemon.h"
 #include "type.h"
@@ -15,10 +16,10 @@ class Effect;
 
 enum class ActionType { NONE, ATTACK, STATUS, SWITCH };
 
-enum class MoveAttributes { PHYSICAL = 1u << 0, SPECIAL = 1u << 1, CONTACT = 1u << 2 };
+enum class MoveAttributes { NONE = 0, CONTACT = 1u << 0 };
 
 class Action {
-private:
+protected:
     ActionType mActionType = ActionType::NONE;
     s8 mPriority = 0;
 
@@ -26,14 +27,20 @@ public:
     Action(){};
     ~Action() = default;
 
-    ActionType getType() { return mActionType; };
+    ActionType getActionType() { return mActionType; };
     s8 getPriority() { return mPriority; };
-    virtual void execute(BattleField* field, Team* sourceTeam, Team* targetTeam) = 0;
+    virtual void execute(Battle* battle, Side source, Side target) = 0;
+};
+
+struct EffectPair {
+    Effect* effect;
+    f32 chance;
 };
 
 class Move : public Action {
 private:
-    s32 mIx;
+    const char* mName;
+    const s32 mIx;
     Type mType;
     s32 mPower;
     f32 mAccuracy;
@@ -41,18 +48,22 @@ private:
     s8 mMaxPp;
     s8 mPriority;
     Effect* mPrimaryEffect;
-    Effect* mSecondaryEffect;
-    f32 mSecondaryEffectChance;
     MoveAttributes mAttributes;
+    bool mIsPhysical;
+    std::vector<EffectPair*> mSecondaryEffects;
 
 public:
-    Move(s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect primaryEffect, Effect secondaryEffect, f32 secondaryEffectChance,
-         s8 priority = 0);
+    Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
+         s8 priority = 0, bool isPhysical = false);
     ~Move();
 
+    const char* getName();
+    void addSecondaryEffect(Effect* effect, f32 probability);
     void resetPP();
     bool canUse();
-    void execute(BattleField* field, Team* sourceTeam, Team* targetTeam) override;
+
+    f32 calcDamage(Battle* battle, Side source, Side target);
+    void execute(Battle* battle, Side source, Side target) override;
 };
 
 class Switch : public Action {
@@ -63,7 +74,7 @@ private:
 public:
     Switch(s8 mTargetIx);
 
-    void execute(BattleField* field, Team* sourceTeam, Team* targetTeam) override;
+    void execute(Battle* battle, Side source, Side target) override;
 };
 
 }  // namespace engine

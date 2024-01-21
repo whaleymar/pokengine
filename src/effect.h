@@ -28,13 +28,7 @@ enum class EffectType {
     BOOST_DEFENSE  // filter
 };
 
-enum class When { ENTER, EXIT, ATTACK, DEFEND, STEP };
-
-// TODO effects don't have innate priority. Each battle phase executes effects (like ability entrance effects, move effects, turn end effects) and
-// their relative priority is based on active pokemon
-
-// s8 getPriority(EffectType effect);  // TODO // ability effects happen before
-// sortEffects(std::vector<Effect*>& effects);
+enum class When { ENTER, EXIT, ATTACK_BEFORE, ATTACK_AFTER, DEFEND_BEFORE, DEFEND_AFTER, STEP };
 
 class Effect {
 private:

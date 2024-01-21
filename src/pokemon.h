@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "battle.h"
 #include "dtypes.h"
 #include "item.h"
 #include "type.h"
@@ -28,9 +29,9 @@ enum class Status { NONE, PAR, BRN, FRZ, SLP, PSN, TOX };
 
 /*
  * these are kind of complex
- * some need numbers attached (sub health, turns left)
+ * some need numbers attached (substitute health, # turns left)
  * some are attached to an opposing pokemon
- * some remain until a different pokemon leaves
+ * some remain until the inflicting pokemon leaves
  * most remain until the affected pokemon leaves
  */
 enum class VolatileStatus {
@@ -71,10 +72,24 @@ enum class VolatileStatus {
     // TODO several more are left
 };
 
+class BattlePokemon;
+
+class VolatileStatusTracker {
+private:
+    VolatileStatus mStatus;
+    BattlePokemon* mSourceMon;
+    s32 mHp;
+    s32 mTurns = 0;
+
+public:
+    VolatileStatusTracker(VolatileStatus status, BattlePokemon* pokemon);
+    ~VolatileStatusTracker() = default;
+};
+
 enum class Sex { NONE, M, F };
 
 class PokemonSpecies {
-private:
+protected:
     const char* mName;
     const s32 mDexNo;
     const Stats mBaseStats;
@@ -94,36 +109,36 @@ private:
     const Sex mSex;
     const Type mTeraType;
 
+    Move** mMoves;
     Stats mStats;
     Ability* mAbility;
-    const Ability* mAbilityOriginal;
+    Ability* const mAbilityOriginal;
     Item* mItem;
-    const Item* mItemOriginal;
+    Item* const mItemOriginal;
 
-    void calcStats();
+    void calcStats(bool ignoreHp = true);
 
     friend class BattlePokemon;
 
 public:
     Pokemon(const char* name, s32 dexNo, Stats basestats, Type type1, Type type2, s32 weight, s8 level, Nature nature, Stats ivs, Stats evs,
-            Ability* ability, Item* item, Sex sex, Type teraType);
+            Ability* ability, Item* item, Sex sex, Type teraType, Move* move1, Move* move2, Move* move3, Move* move4);
+    ~Pokemon();
 };
 
 class BattlePokemon {
 private:
-    Pokemon* mPokemon;
-    Move** moves;
+    const Pokemon* mPokemon;
     s32 mHp;
     Stats mBoosts = Stats();
     Status mStatus = Status::NONE;
-    s8 mStatusTurns;
-    VolatileStatus mVolatileStatus = VolatileStatus::NONE;  // TODO should be vector of statuses
-    s8 mVolatileStatusTurns;
+    s8 mStatusTurns = 0;
+    std::vector<VolatileStatusTracker*> mVolatileStatuses;
     Type mActiveType;
-    s8 mLastUsedMoveIx;
+    s8 mLastUsedMoveIx = -1;
     bool mIsTerastallized = false;
     bool mIsGrounded;
-    bool mIsActive;  // unsure if needed
+    bool mIsActive = false;  // unsure if needed
     bool mIsChoiceLocked = false;
     bool mIsFirstTurn = false;
 
@@ -132,26 +147,34 @@ public:
     ~BattlePokemon();
 
     void resetVolatileEffects();
-    s32 getStat(Stat statIx);
+    s32 getStat(Stat statIx) const;
     void setType(Type type);
     void resetType();
-    f32 getHpFraction();
+    f32 getHpFraction() const;
     void setHpFraction(f32 fraction);
-    void unalive();
+    void takeDamage(s32 damage);
+    void takeDamage(f32 hpFraction);
+    void healDamage(s32 hp);
+    void healDamage(f32 hpFraction);
     void restore();
-    bool isAlive();
-    bool isTrapped();
-    Ability* getAbility();
+    bool isAlive() const;
+    bool isTrapped() const;
+    Ability* getAbility() const;
     bool applyEndOfTurnEffects();  // TODO make this a Battle method. Effects dont all happen to one poke then other poke. Is actually poisoncheck
                                    // poke1 poisoncheck poke2, terrainheal poke1 terrainheal poke2, etc
-    bool isGrounded();
+    bool isGrounded() const;
     void setActive();  // should set mIsFirstTurn = true
     void setInactive();
-    bool isMoveUsable(s8 moveIx);
-    Move* getMove(s8 moveIx);
-    Item* getItem();
-    bool isFirstTurn();
+    bool isMoveUsable(s8 moveIx) const;
+    Move* getMove(s8 moveIx) const;
+    Item* getItem() const;
+    bool isFirstTurn() const;
     void setIsNotFirstTurn();
+    Status getStatus() const;
+
+    s8 getLevel() { return mPokemon->mLevel; };
+    Type getType() { return mActiveType; };
+    const char* getName() { return mPokemon->mName; };
 };
 
 }  // namespace engine
