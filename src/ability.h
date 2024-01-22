@@ -15,7 +15,7 @@ private:
     const char* mName;
     const s32 mIx;
     Effect* mEffect;
-    When* mWhen;
+    When mWhen;
     bool mCanChange;
 
 public:

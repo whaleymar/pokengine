@@ -81,8 +81,10 @@ private:
     s32 mHp;
     s32 mTurns = 0;
 
+    friend class BattlePokemon;
+
 public:
-    VolatileStatusTracker(VolatileStatus status, BattlePokemon* pokemon);
+    VolatileStatusTracker(VolatileStatus status, BattlePokemon* sourceMon);
     ~VolatileStatusTracker() = default;
 };
 
@@ -112,10 +114,10 @@ private:
     Move** mMoves;
     Stats mStats;
     Ability* mAbility;
-    Ability* const mAbilityOriginal;
     Item* mItem;
-    Item* const mItemOriginal;
 
+    static s8 getNatureBoost(Nature nature, Stat stat);
+    static s32 calcNonHpStat(s32 base, s32 iv, s32 ev, s32 level, s8 natureBoost);
     void calcStats(bool ignoreHp = true);
 
     friend class BattlePokemon;
@@ -135,12 +137,17 @@ private:
     s8 mStatusTurns = 0;
     std::vector<VolatileStatusTracker*> mVolatileStatuses;
     Type mActiveType;
+    Ability* mActiveAbility;
+    Item* mActiveItem;
     s8 mLastUsedMoveIx = -1;
     bool mIsTerastallized = false;
     bool mIsGrounded;
+    bool mIsTrapped = false;
     bool mIsActive = false;  // unsure if needed
     bool mIsChoiceLocked = false;
     bool mIsFirstTurn = false;
+
+    void setStatBoost(Stat statIx, s8 boostLevel);
 
 public:
     BattlePokemon(Pokemon* pokemon);
@@ -148,8 +155,12 @@ public:
 
     void resetVolatileEffects();
     s32 getStat(Stat statIx) const;
+    s8 getStatBoostLevel(Stat statIx) const;
+    void boostStat(Stat statIx, s8 nStages);
+    Type getType() { return mActiveType; };
     void setType(Type type);
     void resetType();
+    void resetAbility();
     f32 getHpFraction() const;
     void setHpFraction(f32 fraction);
     void takeDamage(s32 damage);
@@ -160,10 +171,8 @@ public:
     bool isAlive() const;
     bool isTrapped() const;
     Ability* getAbility() const;
-    bool applyEndOfTurnEffects();  // TODO make this a Battle method. Effects dont all happen to one poke then other poke. Is actually poisoncheck
-                                   // poke1 poisoncheck poke2, terrainheal poke1 terrainheal poke2, etc
     bool isGrounded() const;
-    void setActive();  // should set mIsFirstTurn = true
+    void setActive();
     void setInactive();
     bool isMoveUsable(s8 moveIx) const;
     Move* getMove(s8 moveIx) const;
@@ -171,9 +180,11 @@ public:
     bool isFirstTurn() const;
     void setIsNotFirstTurn();
     Status getStatus() const;
+    void setStatus(Status status);
+    bool hasVolatileStatus(VolatileStatus vStatus) const;
+    void addVolatileStatus(VolatileStatus vStatus, BattlePokemon* sourceMon);
 
     s8 getLevel() { return mPokemon->mLevel; };
-    Type getType() { return mActiveType; };
     const char* getName() { return mPokemon->mName; };
 };
 
