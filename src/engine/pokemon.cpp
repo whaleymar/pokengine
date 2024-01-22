@@ -22,38 +22,25 @@ Pokemon::Pokemon(const char* name, s32 dexNo, Stats basestats, Type type1, Type 
                  Ability* ability, Item* item, Sex sex, Type teraType, Move* move1, Move* move2, Move* move3, Move* move4)
     : mLevel(level), mNature(nature), mIvs(ivs), mEvs(evs), mAbility(ability), mItem(item), mSex(sex), mTeraType(teraType),
       PokemonSpecies(name, dexNo, basestats, type1, type2, weight) {
-    calcStats(false);
-    mMoves = new Move*[4];
-    // TODO is there a better way to do this?
-    mMoves[0] = move1;
-    mMoves[1] = move2;
-    mMoves[2] = move3;
-    mMoves[3] = move4;
+    calcStats();
+    mMoves = new Move* [4] { move1, move2, move3, move4 };
 }
 
 Pokemon::~Pokemon() {
     delete mMoves;
 }
 
-s8 Pokemon::getNatureBoost(Nature nature, Stat stat) {
-    return 0;  // TODO
+f32 Pokemon::getNatureBoost(Nature nature, Stat stat) {
+    return BOOST_TABLE[(s32)stat - 1][(s32)nature];
 }
 
-s32 Pokemon::calcNonHpStat(s32 base, s32 iv, s32 ev, s32 level, s8 natureBoost) {
-    f32 natureModifier = 1.0;
-    if (natureBoost == 1) {
-        natureModifier = 1.1;
-    } else if (natureBoost == -1) {
-        natureModifier = 0.9;
-    }
+s32 Pokemon::calcNonHpStat(s32 base, s32 iv, s32 ev, s32 level, f32 natureBoost) {
     return static_cast<s32>(static_cast<f32>((static_cast<s32>((2 * base + iv + static_cast<s32>(static_cast<f32>(ev) / 4)) * level / 100) + 5)) *
-                            natureModifier);
+                            natureBoost);
 }
 
-void Pokemon::calcStats(bool ignoreHp) {
-    if (!ignoreHp) {
-        mStats.hp = static_cast<s32>((2 * mBaseStats.hp + mIvs.hp + static_cast<s32>(static_cast<f32>(mEvs.hp) / 4)) * mLevel / 100) + mLevel + 10;
-    }
+void Pokemon::calcStats() {
+    mStats.hp = static_cast<s32>((2 * mBaseStats.hp + mIvs.hp + static_cast<s32>(static_cast<f32>(mEvs.hp) / 4)) * mLevel / 100) + mLevel + 10;
     mStats.attack = calcNonHpStat(mBaseStats.attack, mIvs.attack, mEvs.attack, mLevel, Pokemon::getNatureBoost(mNature, Stat::ATTACK));
     mStats.defense = calcNonHpStat(mBaseStats.defense, mIvs.defense, mEvs.defense, mLevel, Pokemon::getNatureBoost(mNature, Stat::DEFENSE));
     mStats.spattack = calcNonHpStat(mBaseStats.spattack, mIvs.spattack, mEvs.spattack, mLevel, Pokemon::getNatureBoost(mNature, Stat::SPATTACK));
@@ -67,7 +54,7 @@ BattlePokemon::BattlePokemon(Pokemon* pokemon) : mPokemon(pokemon) {
     mActiveAbility = pokemon->mAbility;
     mActiveItem = pokemon->mItem;
     mVolatileStatuses = std::vector<VolatileStatusTracker*>();
-    if (isType(mActiveType, Type::FLYING)) {  // TODO check levitate
+    if (isType(mActiveType, Type::FLYING) || hasVolatileStatus(VolatileStatus::AIRBORNE)) {  // TODO make sure levitate applies this status
         mIsGrounded = false;
     } else {
         mIsGrounded = true;
@@ -87,20 +74,19 @@ void BattlePokemon::resetVolatileEffects() {
 }
 
 s32 BattlePokemon::getStat(Stat statIx) const {
-    // TODO should include modifiers here
     switch (statIx) {
     case Stat::HP:
         return mPokemon->mStats.hp;
     case Stat::ATTACK:
-        return mPokemon->mStats.attack;
+        return mPokemon->mStats.attack * getStatBoostModifier(true, getStatBoostLevel(Stat::ATTACK));
     case Stat::DEFENSE:
-        return mPokemon->mStats.defense;
+        return mPokemon->mStats.defense * getStatBoostModifier(true, getStatBoostLevel(Stat::DEFENSE));
     case Stat::SPATTACK:
-        return mPokemon->mStats.spattack;
+        return mPokemon->mStats.spattack * getStatBoostModifier(true, getStatBoostLevel(Stat::SPATTACK));
     case Stat::SPDEFENSE:
-        return mPokemon->mStats.spdefense;
+        return mPokemon->mStats.spdefense * getStatBoostModifier(true, getStatBoostLevel(Stat::SPDEFENSE));
     case Stat::SPEED:
-        return mPokemon->mStats.speed;
+        return mPokemon->mStats.speed * getStatBoostModifier(true, getStatBoostLevel(Stat::SPEED));
     }
 }
 
@@ -118,6 +104,14 @@ s8 BattlePokemon::getStatBoostLevel(Stat statIx) const {
         return mBoosts.spdefense;
     case Stat::SPEED:
         return mBoosts.speed;
+    }
+}
+
+f32 BattlePokemon::getStatBoostModifier(bool notAccuracyEvasion, s8 boostLevel) const {
+    if (notAccuracyEvasion) {
+        return STAT_MODIFIER_NORMAL[boostLevel + 6];
+    } else {
+        return STAT_MODIFIER_ACCURACY[boostLevel + 6];
     }
 }
 
@@ -215,9 +209,8 @@ void BattlePokemon::restore() {
     for (s32 i = 0; i < MOVE_COUNT; i++) {
         mPokemon->mMoves[i]->resetPP();
     }
-    // TODO move these to Pokemon class
-    // mPokemon->mItem = mPokemon->mItemOriginal;
-    // mPokemon->mAbility = mPokemon->mAbilityOriginal;
+    mActiveItem = mPokemon->mItem;
+    mActiveAbility = mPokemon->mAbility;
 }
 
 bool BattlePokemon::isAlive() const {

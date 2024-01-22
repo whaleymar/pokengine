@@ -14,6 +14,9 @@ class Effect;
 
 enum class Stat { HP = 0, ATTACK = 1, DEFENSE = 2, SPATTACK = 3, SPDEFENSE = 4, SPEED = 5 };
 
+const f32 STAT_MODIFIER_NORMAL[13] = {0.25, 2 / 7, 1 / 3, 0.4, 0.5, 2 / 3, 1, 1.5, 2, 2.5, 3, 3.5, 4};
+const f32 STAT_MODIFIER_ACCURACY[13] = {1 / 3, 0.375, 3 / 7, 0.5, 0.6, 0.75, 1, 4 / 3, 5 / 3, 2, 7 / 3, 8 / 3, 3};
+
 struct Stats {
     s32 hp = 0;
     s32 attack = 0;
@@ -23,7 +26,40 @@ struct Stats {
     s32 speed = 0;
 };
 
-enum class Nature;  // TODO
+enum class Nature {
+    ADAMANT,
+    BASHFUL,
+    BOLD,
+    BRAVE,
+    CALM,
+    CAREFUL,
+    DOCILE,
+    GENTLE,
+    HARDY,
+    HASTY,
+    IMPISH,
+    JOLLY,
+    LAX,
+    LONELY,
+    MILD,
+    MODEST,
+    NAIVE,
+    NAUGHTY,
+    QUIET,
+    QUIRKY,
+    RASH,
+    RELAXED,
+    SASSY,
+    SERIOUS,
+    TIMID
+};
+
+const f32 BOOST_TABLE[5][25] = {
+    {1.1, 1.0, 0.9, 1.1, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.0, 0.9, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9},
+    {1.0, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0, 0.9, 1.0, 0.9, 1.1, 1.0, 1.1, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.0, 1.0, 1.0},
+    {0.9, 1.0, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 1.0, 1.0, 1.1, 1.1, 1.0, 1.0, 1.1, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0},
+    {1.0, 1.0, 1.0, 1.0, 1.1, 1.1, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 1.0, 0.9, 0.9, 1.0, 1.0, 0.9, 1.0, 1.1, 1.0, 1.0},
+    {1.0, 1.0, 1.0, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0, 1.1, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0, 1.1, 1.0, 0.9, 1.0, 1.0, 0.9, 0.9, 1.0, 1.1}};
 
 enum class Status { NONE, PAR, BRN, FRZ, SLP, PSN, TOX };
 
@@ -116,9 +152,9 @@ private:
     Ability* mAbility;
     Item* mItem;
 
-    static s8 getNatureBoost(Nature nature, Stat stat);
-    static s32 calcNonHpStat(s32 base, s32 iv, s32 ev, s32 level, s8 natureBoost);
-    void calcStats(bool ignoreHp = true);
+    static f32 getNatureBoost(Nature nature, Stat stat);
+    static s32 calcNonHpStat(s32 base, s32 iv, s32 ev, s32 level, f32 natureBoost);
+    void calcStats();
 
     friend class BattlePokemon;
 
@@ -156,6 +192,7 @@ public:
     void resetVolatileEffects();
     s32 getStat(Stat statIx) const;
     s8 getStatBoostLevel(Stat statIx) const;
+    f32 getStatBoostModifier(bool notAccuracyEvasion, s8 boostLevel) const;
     void boostStat(Stat statIx, s8 nStages);
     Type getType() { return mActiveType; };
     void setType(Type type);

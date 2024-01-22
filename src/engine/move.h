@@ -37,14 +37,13 @@ struct EffectPair {
     f32 chance;
 };
 
-class Move : public Action {
-private:
+class MoveBase : public Action {
+protected:
     const char* mName;
     const s32 mIx;
     Type mType;
     s32 mPower;
     f32 mAccuracy;
-    s8 mPp;
     s8 mMaxPp;
     s8 mPriority;
     Effect* mPrimaryEffect;
@@ -53,16 +52,27 @@ private:
     std::vector<EffectPair*> mSecondaryEffects;
 
 public:
-    Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
-         s8 priority = 0, bool isPhysical = false);
-    ~Move();
+    MoveBase(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
+             s8 priority, bool isPhysical);
+    ~MoveBase();
 
     const char* getName();
     void addSecondaryEffect(Effect* effect, f32 probability);
+    f32 calcDamage(Battle* battle, Side source, Side target);
+};
+
+class Move : public MoveBase {
+private:
+    s8 mPp;
+    bool mIsDisabled = false;
+
+public:
+    Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
+         s8 priority = 0, bool isPhysical = false);
+    ~Move() = default;
+
     void resetPP();
     bool canUse();
-
-    f32 calcDamage(Battle* battle, Side source, Side target);
     void execute(Battle* battle, Side source, Side target) override;
 };
 

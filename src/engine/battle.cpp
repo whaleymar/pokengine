@@ -154,10 +154,14 @@ void Battle::endTurn() {
         // this goes in move.execute():
         // mTeamLeft->switchPokemonOut(requestAction(Side::PLAYER, true, false));
         requestAction(Side::PLAYER, true, false)->execute(this, Side::PLAYER, Side::PLAYER);
+    } else {
+        mTeamLeft->getActive()->setIsNotFirstTurn();
     }
     if (!mTeamRight->isReady()) {
         // mTeamRight->switchPokemonOut(requestAction(Side::OTHER, true, false));
         requestAction(Side::OTHER, true, false)->execute(this, Side::OTHER, Side::OTHER);
+    } else {
+        mTeamRight->getActive()->setIsNotFirstTurn();
     }
 
     applyEntranceEffects();

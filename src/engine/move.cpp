@@ -7,36 +7,28 @@
 
 namespace engine {
 
-Move::Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
-           s8 priority, bool isPhysical)
-    : mName(name), mIx(ix), mType(type), mPower(power), mAccuracy(accuracy), mPp(maxpp), mMaxPp(maxpp), mPriority(priority),
-      mPrimaryEffect(primaryEffect), mAttributes(attributes), mIsPhysical(isPhysical) {
+MoveBase::MoveBase(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
+                   s8 priority, bool isPhysical)
+    : mName(name), mIx(ix), mType(type), mPower(power), mAccuracy(accuracy), mMaxPp(maxpp), mPriority(priority), mPrimaryEffect(primaryEffect),
+      mAttributes(attributes), mIsPhysical(isPhysical) {
     mSecondaryEffects = std::vector<EffectPair*>();
 }
 
-Move::~Move() {
+MoveBase::~MoveBase() {
     for (s32 i = 0; i < mSecondaryEffects.size(); i++) {
         delete mSecondaryEffects[i];
     }
 }
 
-const char* Move::getName() {
+const char* MoveBase::getName() {
     return mName;
 }
 
-void Move::addSecondaryEffect(Effect* effect, f32 probability) {
+void MoveBase::addSecondaryEffect(Effect* effect, f32 probability) {
     mSecondaryEffects.push_back(new EffectPair({effect, probability}));
 }
 
-void Move::resetPP() {
-    mPp = mMaxPp;
-}
-
-bool Move::canUse() {
-    return mPp > 0;
-}
-
-f32 Move::calcDamage(Battle* battle, Side source, Side target) {
+f32 MoveBase::calcDamage(Battle* battle, Side source, Side target) {
     // these should maybe all be ints TODO
 
     if (mActionType == ActionType::STATUS) {
@@ -112,6 +104,18 @@ f32 Move::calcDamage(Battle* battle, Side source, Side target) {
     // there are a bunch of other modifiers here, see bulbapedia
 
     return damage;
+}
+
+Move::Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
+           s8 priority, bool isPhysical)
+    : MoveBase(name, ix, type, power, accuracy, maxpp, primaryEffect, attributes, priority, isPhysical), mPp(maxpp) {}
+
+void Move::resetPP() {
+    mPp = mMaxPp;
+}
+
+bool Move::canUse() {
+    return mPp > 0 && !mIsDisabled;
 }
 
 void Move::execute(Battle* battle, Side source, Side target) {
