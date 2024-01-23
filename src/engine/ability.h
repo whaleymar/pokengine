@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dtypes.h"
+#include "effect.h"
 
 namespace engine {
 
@@ -10,20 +11,14 @@ enum class When;
 enum class Side;
 class Team;
 
-class Ability {  // TODO
+class Ability : public EffectHolder {
 private:
     const char* mName;
     const s32 mIx;
-    Effect* mEffect;
-    When mWhen;
-    bool mCanChange;
 
 public:
-    Ability(char* name, s32 ix, bool canChange = true);
+    Ability(char* name, s32 ix, Effect* effect, When when, bool canChange = true);
     ~Ability() = default;
-
-    Effect* getEffect();
-    When getTiming();
 };
 
 }  // namespace engine

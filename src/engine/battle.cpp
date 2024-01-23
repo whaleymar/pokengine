@@ -115,7 +115,6 @@ std::vector<Action*> Team::getActionSet() const {
 
 Battle::Battle(Team* playerTeam, Team* otherTeam) : mTeamLeft(playerTeam), mTeamRight(otherTeam) {
     mField = new BattleField();
-    std::uniform_real_distribution<f32> mDistribution(0.0, 1.0);
 }
 
 Battle::~Battle() {
@@ -229,7 +228,7 @@ void Battle::applyEntranceEffectAbility(Team* team, Side side) {
     if (!team->getActive()->isFirstTurn() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
         return;
     }
-    team->getActive()->getAbility()->getEffect()->applyEffect(mField, side, team);
+    team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEntranceEffectHazards(Team* team, Side side) {
@@ -250,14 +249,14 @@ void Battle::applyEndOfTurnEffectAbility(Team* team, Side side) {
     if (team->getActive()->getAbility()->getTiming() != When::STEP) {
         return;
     }
-    team->getActive()->getAbility()->getEffect()->applyEffect(mField, side, team);
+    team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyExitEffectAbility(Team* team, Side side) {
     if (team->getActive()->getAbility()->getTiming() != When::EXIT) {
         return;
     }
-    team->getActive()->getAbility()->getEffect()->applyEffect(mField, side, team);
+    team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyAction(Action* move, Side user, Side target) {

@@ -8,7 +8,7 @@ namespace engine {
 class Effect;
 class BattlePokemon;
 
-enum class Side { PLAYER, OTHER };
+enum class Side { PLAYER, OTHER, ALL };
 
 enum class Weather { NONE, RAIN, SUN, SAND, SNOW, RAINHEAVY, SUNHARSH };
 
@@ -24,6 +24,7 @@ enum class Barrier {
 };
 
 enum class Hazard { STONES, SPIKES, POISON_SPIKES, STEEL_SPIKES, STICK_WEB };
+
 Type getHazardType(Hazard hazard);
 
 class EntryHazards {
@@ -78,7 +79,7 @@ public:
 
     void startWeather(Weather weather);
     void startTerrain(Terrain terrain);
-    void addHazard(Hazard* hazard, Side side);
+    void addHazard(Hazard hazard, Side side);
     EntryHazards* getHazards(Side side);
     void step();
 };

@@ -17,6 +17,9 @@ class Action;
 class Move;
 class Switch;
 
+const std::default_random_engine GENERATOR;
+std::uniform_real_distribution<f32> UNIFORM_DIST(0.0, 1.0);
+
 class Team {
 private:
     BattlePokemon** mPokemon;
@@ -53,8 +56,6 @@ private:
     Team* mTeamRight;
     BattleField* mField;
     s32 mTurnNo = 0;
-    std::default_random_engine mGenerator;
-    std::uniform_real_distribution<f32> mDistribution;
 
     void applyEntranceEffectAbility(Team* team, Side side);  // (intimidate)
     void applyEntranceEffectHazards(Team* team, Side side);  //
@@ -95,17 +96,17 @@ public:
     Barriers* getBarriers(Side side);
     Action* requestAction(Side side, bool canSwitch, bool canAttack);
 
-    f32 sample() { return mDistribution(mGenerator); };
-    bool roll(f32 probability) {
+    static f32 sample() { return UNIFORM_DIST(GENERATOR); };
+    static bool roll(f32 probability) {
         if (probability == 1.0) {
             return true;
         }
         return probability >= sample();
     };
-    s32 randint(s32 min, s32 max) {
+    static s32 randint(s32 min, s32 max) {
         // returns random int between min and max (exclusive) // TODO make sure is exclusive
         std::uniform_int_distribution<int> distribution(min, max);
-        return distribution(mGenerator);
+        return distribution(GENERATOR);
     }
 };
 

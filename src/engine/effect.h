@@ -6,13 +6,12 @@
 
 namespace engine {
 
-class BattleField;
+class Battle;
 enum class Side;
 enum class Stat;
-class Team;
 
 enum class EffectType {
-    // STAT_CHANGE, vstatus
+    STAT_BOOST,  // could do set_vstatus? not sure tbh
     WEATHER_START,
     TERRAIN_START,
     FORCE_SWITCH,
@@ -24,10 +23,16 @@ enum class EffectType {
     SET_PRIORITY,
     APPLY_DAMAGE,
     APPLY_HEALING,
-    BOOST_ATTACK,  // sheer force
-    BOOST_DEFENSE  // filter
+    BOOST_ATTACK,    // sheer force / pure power`
+    BOOST_DEFENSE,   // filter
+    BOOST_SPDEFENSE  // ice scales
 };
 
+// these will get very complicated for some abilities. rough skin, sheer force, ice scales, filter -- a lot to think about
+// rough skin is DEFEND_AFTER, but with added contact move requirement
+// sheer force is ATTACK_BEFORE, but with secondary effect requirement (and removes the effects)
+// ice scales is DEFEND_BEFORE, but checks whether the attacking move is physical or special
+// filter is DEFEND_BEFORE, but checks if incoming move is supereffective.
 enum class When { ENTER, EXIT, ATTACK_BEFORE, ATTACK_AFTER, DEFEND_BEFORE, DEFEND_AFTER, STEP };
 
 class Effect {
@@ -38,7 +43,29 @@ public:
     Effect(EffectType type);
     ~Effect() = default;
 
-    virtual void applyEffect(BattleField* field, Side side, Team* team) = 0;
+    // virtual void applyEffect(BattleField* field, Side side, Team* team) const = 0;
+    virtual void applyEffect(Battle* battle, Side side) const = 0;
+};
+
+class EffectHolder {
+private:
+    const Effect* mEffect;
+    const When mWhen;
+    const bool mCanChange;
+
+public:
+    EffectHolder(Effect* effect, When when, bool canChange);
+    ~EffectHolder() = default;
+
+    const Effect* getEffect() const { return mEffect; };
+    When getTiming() const { return mWhen; };
+    bool isChangeable() const { return mCanChange; };
+};
+
+class NoEffect : public Effect {
+public:
+    NoEffect();
+    void applyEffect(Battle* battle, Side side) const override{};
 };
 
 class StatEffect : public Effect {
@@ -48,7 +75,7 @@ private:
 
 public:
     StatEffect(Stat stat, s8 delta);
-    void applyEffect(BattleField* field, Side side, Team* team) override;
+    void applyEffect(Battle* battle, Side side) const override;
 };
 
 class WeatherEffect : public Effect {
@@ -56,8 +83,8 @@ private:
     Weather mWeather;
 
 public:
-    WeatherEffect(Weather weather);  // : Effect(EffectType::WEATHER_START) { mWeather = weather; }
-    void applyEffect(BattleField* field, Side side, Team* team) override;
+    WeatherEffect(Weather weather);
+    void applyEffect(Battle* battle, Side side) const override;
 };
 
 class TerrainEffect : public Effect {
@@ -66,16 +93,16 @@ private:
 
 public:
     TerrainEffect(Terrain terrain);
-    void applyEffect(BattleField* field, Side side, Team* team) override;
+    void applyEffect(Battle* battle, Side side) const override;
 };
 
 class SwitchEffect : public Effect {
 private:
-    s8 mTeamIx;
+    bool mIsRandom;
 
 public:
-    SwitchEffect(s8 teamIx);
-    void applyEffect(BattleField* field, Side side, Team* team) override;
+    SwitchEffect(bool isRandom);
+    void applyEffect(Battle* battle, Side side) const override;
 };
 
 class SetHazardEffect : public Effect {
@@ -84,7 +111,7 @@ private:
 
 public:
     SetHazardEffect(Hazard hazard);
-    void applyEffect(BattleField* field, Side side, Team* team) override;
+    void applyEffect(Battle* battle, Side side) const override;
 };
 
 }  // namespace engine

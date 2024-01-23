@@ -132,12 +132,12 @@ void Move::execute(Battle* battle, Side source, Side target) {
             targetMon->takeDamage(damage);
         }
     } else {  // ActionType::STATUS
-        mPrimaryEffect->applyEffect(battle->getField(), target, battle->getTeam(target));
+        mPrimaryEffect->applyEffect(battle, target);
     }
 
     for (EffectPair* effectPair : mSecondaryEffects) {
         if (battle->roll(effectPair->chance)) {
-            effectPair->effect->applyEffect(battle->getField(), target, battle->getTeam(target));
+            effectPair->effect->applyEffect(battle, target);
         }
     }
 

@@ -1,3 +1,7 @@
+getting this running:
+- effect.cpp
+- field.cpp
+
 short term:
 - accuracy/evasion boosts
 - full logging

@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include "dtypes.h"
+#include "enumops.h"
 
 namespace engine {
 
@@ -27,7 +28,8 @@ enum class Type {
     ICE = (1u << 17)
 };
 
-// could do macro for these
+// could do macro for these (or maybe use inheritance)
+// DEFINE_ENUM_OPS(Type); // not working
 inline Type operator|(Type a, Type b) {
     return static_cast<Type>(static_cast<u32>(a) | static_cast<u32>(b));
 }
