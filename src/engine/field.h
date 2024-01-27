@@ -79,8 +79,12 @@ public:
 
     void startWeather(Weather weather);
     void startTerrain(Terrain terrain);
+    void addBarrier(Barrier barrier, Side side);
     void addHazard(Hazard hazard, Side side);
     EntryHazards* getHazards(Side side);
+    void clearHazards();
+    void clearBarriers();
+
     void step();
 };
 

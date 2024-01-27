@@ -28,6 +28,8 @@ private:
     s8 mSize = 0;
     bool mIsTerastallized = false;
 
+    Action* mActionChoice = nullptr;
+
 public:
     Team();
     ~Team();
@@ -42,6 +44,10 @@ public:
     void revivePokemon(s8 ix);
     void switchPokemonOut(s8 ix);
     void prepareForBattleStart(s8 startIx);
+    Action* getSelectedAction() const;
+    void setSelectedAction(Action* action);
+    s8 getActionPriority() const;
+
     std::vector<Action*> getSwitchActions() const;
     std::vector<Action*> getMoveActions() const;
     std::vector<Action*> getActionSet() const;
@@ -60,7 +66,7 @@ private:
     void applyEntranceEffectAbility(Team* team, Side side);  // (intimidate)
     void applyEntranceEffectHazards(Team* team, Side side);  //
     void applyEntranceEffectItem(Team* team, Side side);     // TODO (air ballon, terrain seeds)
-    void applyEntranceEffects();                             // calls ^
+    void applyEntranceEffects(Side side = Side::ALL);        // calls ^ for each side
 
     void applyEndOfTurnEffectAbility(Team* team, Side side);  // (speed boost, slow start)
     void applyEndOfTurnEffectItem(Team* team, Side side);     // TODO (leftovers)
@@ -87,7 +93,7 @@ public:
     void doInOrder(const sidemethod& function, Side first);
     void start();
     void endTurn();
-    bool simulateTurn(Action* playerMove, Action* otherMove);  // ret true if battle ended
+    bool simulateTurn();
     bool isBattleOver();
     Side getFastestSide();
     Team* getTeam(Side side);

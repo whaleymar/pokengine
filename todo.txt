@@ -1,5 +1,6 @@
 getting this running:
 - effect.cpp
+- end of turn effects for status effects, volatile statuses, weather, terrain
 - field.cpp
 
 short term:

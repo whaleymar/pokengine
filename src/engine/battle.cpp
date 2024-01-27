@@ -75,6 +75,27 @@ void Team::prepareForBattleStart(s8 startIx = 0) {
     mAliveCount = mSize;
 }
 
+Action* Team::getSelectedAction() const {
+    return mActionChoice;
+}
+
+void Team::setSelectedAction(Action* action) {
+    mActionChoice = action;
+}
+
+s8 Team::getActionPriority() const {
+    if (mActionChoice == nullptr || mActionChoice->getActionType() == ActionType::NONE) {
+        return 0;
+    }
+    if (mActionChoice->getActionType() == ActionType::SWITCH) {
+        return mActionChoice->getPriority();
+    }
+    if (getActive()->getPriorityForNextMove() != 0) {
+        return getActive()->getPriorityForNextMove();
+    }
+    return mActionChoice->getPriority();
+}
+
 std::vector<Action*> Team::getSwitchActions() const {
     std::vector<Action*> actions;
     if (isReady() && mPokemon[mActive]->isTrapped()) {
@@ -131,10 +152,20 @@ void Battle::doInOrder(const sidemethod& function, Side first) {
     }
 }
 
-void Battle::applyEntranceEffects() {
-    doInOrder(&Battle::applyEntranceEffectHazards, getFastestSide());
-    doInOrder(&Battle::applyEntranceEffectAbility, getFastestSide());
-    doInOrder(&Battle::applyEntranceEffectItem, getFastestSide());
+void Battle::applyEntranceEffects(Side side) {
+    if (side == Side::ALL) {
+        doInOrder(&Battle::applyEntranceEffectHazards, getFastestSide());
+        doInOrder(&Battle::applyEntranceEffectAbility, getFastestSide());
+        doInOrder(&Battle::applyEntranceEffectItem, getFastestSide());
+        getTeam(Side::PLAYER)->getActive()->setEnteredBattle();
+        getTeam(Side::OTHER)->getActive()->setEnteredBattle();
+
+    } else {
+        applyEntranceEffectHazards(getTeam(side), side);
+        applyEntranceEffectAbility(getTeam(side), side);
+        applyEntranceEffectItem(getTeam(side), side);
+        getTeam(side)->getActive()->setEnteredBattle();
+    }
 }
 
 void Battle::start() {
@@ -144,20 +175,21 @@ void Battle::start() {
     applyEntranceEffects();
 
     mTurnNo++;
+    bool battleEnded = false;
+    while (!battleEnded) {
+        battleEnded = simulateTurn();
+    }
 }
 
 void Battle::endTurn() {
     doInOrder(&Battle::applyEndOfTurnEffectAbility, getFastestSide());
 
     if (!mTeamLeft->isReady()) {
-        // this goes in move.execute():
-        // mTeamLeft->switchPokemonOut(requestAction(Side::PLAYER, true, false));
         requestAction(Side::PLAYER, true, false)->execute(this, Side::PLAYER, Side::PLAYER);
     } else {
         mTeamLeft->getActive()->setIsNotFirstTurn();
     }
     if (!mTeamRight->isReady()) {
-        // mTeamRight->switchPokemonOut(requestAction(Side::OTHER, true, false));
         requestAction(Side::OTHER, true, false)->execute(this, Side::OTHER, Side::OTHER);
     } else {
         mTeamRight->getActive()->setIsNotFirstTurn();
@@ -168,12 +200,17 @@ void Battle::endTurn() {
     mTurnNo++;
 }
 
-bool Battle::simulateTurn(Action* playerMove, Action* otherMove) {
+bool Battle::simulateTurn() {
+    Action* playerMove = requestAction(Side::PLAYER, !getTeam(Side::PLAYER)->getActive()->isTrapped(), true);
+    Action* otherMove = requestAction(Side::OTHER, !getTeam(Side::OTHER)->getActive()->isTrapped(), true);
+    getTeam(Side::PLAYER)->setSelectedAction(playerMove);
+    getTeam(Side::OTHER)->setSelectedAction(otherMove);
+
     Side first;
-    if (playerMove->getPriority() == otherMove->getPriority()) {
+    if (getTeam(Side::PLAYER)->getActionPriority() == getTeam(Side::OTHER)->getActionPriority()) {
         first = getFastestSide();
     } else {
-        first = playerMove->getPriority() > otherMove->getPriority() ? Side::PLAYER : Side::OTHER;
+        first = getTeam(Side::PLAYER)->getActionPriority() > getTeam(Side::OTHER)->getActionPriority() ? Side::PLAYER : Side::OTHER;
     }
 
     if (first == Side::PLAYER) {
@@ -225,21 +262,21 @@ Team* Battle::getTeam(Side side) {
 }
 
 void Battle::applyEntranceEffectAbility(Team* team, Side side) {
-    if (!team->getActive()->isFirstTurn() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
+    if (!team->getActive()->isEnteredBattle() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
         return;
     }
     team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEntranceEffectHazards(Team* team, Side side) {
-    if (!team->getActive()->isFirstTurn() || mField->getHazards(side)->isEmpty()) {
+    if (!team->getActive()->isEnteredBattle() || mField->getHazards(side)->isEmpty()) {
         return;
     }
     mField->getHazards(side)->applyEffects(team->getActive());
 }
 
 void Battle::applyEntranceEffectItem(Team* team, Side side) {
-    if (!team->getActive()->isFirstTurn() || team->getActive()->getItem() == nullptr) {
+    if (!team->getActive()->isEnteredBattle() || team->getActive()->getItem() == nullptr) {
         return;
     }
     // TODO
@@ -260,6 +297,13 @@ void Battle::applyExitEffectAbility(Team* team, Side side) {
 }
 
 void Battle::applyAction(Action* move, Side user, Side target) {
+    /*
+     * apply any effect that modifies the action
+     * execute the action
+     * apply entrance effects if switch
+     * apply effects that happen after a move
+     */
+    // TODO would it make more sense for these to be in move.execute ? probably
     if (move->getActionType() == ActionType::ATTACK) {
         applyBeforeAttackEffectAbility(getTeam(user), user);
         applyBeforeAttackEffectItem(getTeam(user), user);
@@ -279,6 +323,8 @@ void Battle::applyAction(Action* move, Side user, Side target) {
             applyAfterAttackEffectAbility(getTeam(user), user);
             applyAfterAttackEffectItem(getTeam(user), user);
         }
+    } else if (move->getActionType() == ActionType::SWITCH) {
+        applyEntranceEffects(user);
     }
 }
 

@@ -7,8 +7,11 @@
 namespace engine {
 
 class Battle;
+class Item;
 enum class Side;
 enum class Stat;
+enum class Status;
+enum class VolatileStatus;
 
 enum class EffectType {
     STAT_BOOST,  // could do set_vstatus? not sure tbh
@@ -111,6 +114,51 @@ private:
 
 public:
     SetHazardEffect(Hazard hazard);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+class SetBarrierEffect : public Effect {
+private:
+    Barrier mBarrier;
+
+public:
+    SetBarrierEffect(Barrier barrier);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+class SetStatusEffect : public Effect {
+private:
+    Status mStatus;
+
+public:
+    SetStatusEffect(Status status);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+class SetVolatileStatusEffect : public Effect {
+private:
+    VolatileStatus mVStatus;
+
+public:
+    SetVolatileStatusEffect(VolatileStatus vStatus);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+class SetItemEffect : public Effect {
+private:
+    Item* mItem;
+
+public:
+    SetItemEffect(Item* item);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+class SetPriorityEffect : public Effect {
+private:
+    s8 mPriority;
+
+public:
+    SetPriorityEffect(s8 priority);
     void applyEffect(Battle* battle, Side side) const override;
 };
 

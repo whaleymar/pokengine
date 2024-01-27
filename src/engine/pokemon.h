@@ -176,10 +176,11 @@ private:
     Ability* mActiveAbility;
     Item* mActiveItem;
     s8 mLastUsedMoveIx = -1;
+    s8 mNextMovePriority = 0;
     bool mIsTerastallized = false;
     bool mIsGrounded;
     bool mIsTrapped = false;
-    bool mIsActive = false;  // unsure if needed
+    bool mIsEnteredBattle = false;  // used to check if we need to apply entrance effects
     bool mIsChoiceLocked = false;
     bool mIsFirstTurn = false;
 
@@ -211,15 +212,21 @@ public:
     bool isGrounded() const;
     void setActive();
     void setInactive();
+    void setEnteredBattle();
+    bool isEnteredBattle() const;
     bool isMoveUsable(s8 moveIx) const;
     Move* getMove(s8 moveIx) const;
     Item* getItem() const;
+    void setItem(Item* item);
+    bool hasItem() const;
     bool isFirstTurn() const;
     void setIsNotFirstTurn();
     Status getStatus() const;
     void setStatus(Status status);
     bool hasVolatileStatus(VolatileStatus vStatus) const;
     void addVolatileStatus(VolatileStatus vStatus, BattlePokemon* sourceMon);
+    void setPriorityForNextMove(s8 priority);
+    s8 getPriorityForNextMove() const;
 
     s8 getLevel() { return mPokemon->mLevel; };
     const char* getName() { return mPokemon->mName; };

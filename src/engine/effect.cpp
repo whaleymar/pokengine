@@ -45,4 +45,36 @@ void SetHazardEffect::applyEffect(Battle* battle, Side side) const {
     battle->getField()->addHazard(mHazard, side);
 }
 
+SetBarrierEffect::SetBarrierEffect(Barrier barrier) : Effect(EffectType::SET_BARRIER), mBarrier(barrier){};
+
+void SetBarrierEffect::applyEffect(Battle* battle, Side side) const {
+    battle->getField()->addBarrier(mBarrier, side);
+}
+
+SetStatusEffect::SetStatusEffect(Status status) : Effect(EffectType::SET_STATUS), mStatus(status){};
+
+void SetStatusEffect::applyEffect(Battle* battle, Side side) const {
+    battle->getTeam(side)->getActive()->setStatus(mStatus);
+}
+
+SetVolatileStatusEffect::SetVolatileStatusEffect(VolatileStatus vStatus) : Effect(EffectType::SET_VSTATUS), mVStatus(vStatus){};
+
+void SetVolatileStatusEffect::applyEffect(Battle* battle, Side side) const {
+    Side otherSide = side == Side::PLAYER ? Side::OTHER : Side::PLAYER;
+    battle->getTeam(side)->getActive()->addVolatileStatus(mVStatus, battle->getTeam(otherSide)->getActive());
+}
+
+SetItemEffect::SetItemEffect(Item* item) : Effect(EffectType::SET_ITEM), mItem(item){};
+
+void SetItemEffect::applyEffect(Battle* battle, Side side) const {
+    Side otherSide = side == Side::PLAYER ? Side::OTHER : Side::PLAYER;
+    battle->getTeam(side)->getActive()->setItem(mItem);
+}
+
+SetPriorityEffect::SetPriorityEffect(s8 priority) : Effect(EffectType::SET_PRIORITY), mPriority(priority){};
+
+void SetPriorityEffect::applyEffect(Battle* battle, Side side) const {
+    battle->getTeam(side)->getActive()->setPriorityForNextMove(mPriority);
+}
+
 }  // namespace engine

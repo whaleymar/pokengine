@@ -144,4 +144,14 @@ void Move::execute(Battle* battle, Side source, Side target) {
     mPp--;
 }
 
+Switch::Switch(s8 targetIx) : mTargetIx(targetIx){};
+
+void Switch::execute(Battle* battle, Side source, Side target) {
+    // source and target are the same
+
+    // not sure if I should check if trapped here. for now I'll assume I can switch
+    Team* team = battle->getTeam(source);
+    team->switchPokemonOut(mTargetIx);
+}
+
 }  // namespace engine

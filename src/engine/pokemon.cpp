@@ -204,13 +204,13 @@ void BattlePokemon::healDamage(f32 hpFraction) {
 
 void BattlePokemon::restore() {
     mHp = mPokemon->mStats.hp;
-    mActiveType = mPokemon->mType;
-    resetVolatileEffects();
+    resetType();
     for (s32 i = 0; i < MOVE_COUNT; i++) {
         mPokemon->mMoves[i]->resetPP();
     }
     mActiveItem = mPokemon->mItem;
-    mActiveAbility = mPokemon->mAbility;
+    mIsTerastallized = false;
+    setInactive();
 }
 
 bool BattlePokemon::isAlive() const {
@@ -240,15 +240,32 @@ void BattlePokemon::setActive() {
     mIsFirstTurn = true;
 }
 
+void BattlePokemon::setEnteredBattle() {
+    mIsEnteredBattle = true;
+}
+
+bool BattlePokemon::isEnteredBattle() const {
+    return mIsEnteredBattle;
+}
+
 void BattlePokemon::setInactive() {
     resetVolatileEffects();
     if (!mIsTerastallized) {
         resetType();
     }
     resetAbility();
+    mLastUsedMoveIx = -1;
+    mNextMovePriority = 0;
+    if (mStatus == Status::TOX) {
+        mStatusTurns = 0;
+    }
+    mIsEnteredBattle = false;
+    mIsChoiceLocked = false;
+    mIsTrapped = false;
 }
 
 bool BattlePokemon::isMoveUsable(s8 moveIx) const {
+    // TODO check choice lock, encore, etc.
     return mPokemon->mMoves[moveIx]->canUse();
 }
 
@@ -260,12 +277,21 @@ Item* BattlePokemon::getItem() const {
     return mActiveItem;
 }
 
+void BattlePokemon::setItem(Item* item) {
+    mActiveItem = item;
+}
+
+bool BattlePokemon::hasItem() const {
+    return mActiveItem != nullptr;
+}
+
 bool BattlePokemon::isFirstTurn() const {
     return mIsFirstTurn;
 }
 
 void BattlePokemon::setIsNotFirstTurn() {
     mIsFirstTurn = false;
+    mNextMovePriority = 0;
 }
 
 Status BattlePokemon::getStatus() const {
@@ -288,6 +314,14 @@ bool BattlePokemon::hasVolatileStatus(VolatileStatus vStatus) const {
 void BattlePokemon::addVolatileStatus(VolatileStatus vStatus, BattlePokemon* sourceMon) {
     VolatileStatusTracker* vStatusTracker = new VolatileStatusTracker(vStatus, sourceMon);
     mVolatileStatuses.push_back(vStatusTracker);
+}
+
+void BattlePokemon::setPriorityForNextMove(s8 priority) {
+    mNextMovePriority = priority;
+}
+
+s8 BattlePokemon::getPriorityForNextMove() const {
+    return mNextMovePriority;
 }
 
 }  // namespace engine

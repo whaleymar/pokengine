@@ -82,7 +82,7 @@ private:
     s8 mPriority = SWITCH_PRIORITY;
 
 public:
-    Switch(s8 mTargetIx);
+    Switch(s8 targetIx);
 
     void execute(Battle* battle, Side source, Side target) override;
 };
