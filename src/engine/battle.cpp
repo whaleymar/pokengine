@@ -1,14 +1,10 @@
 #include "battle.h"
 
-#include <cstdlib>
-#include <functional>
-#include <random>
 #include "ability.h"
 #include "effect.h"
 #include "field.h"
 #include "move.h"
 #include "pokemon.h"
-#include "type.h"
 
 namespace engine {
 
@@ -254,7 +250,7 @@ Side Battle::getFastestSide() {
     return playerSpeed > otherSpeed ? Side::PLAYER : Side::OTHER;
 }
 
-Team* Battle::getTeam(Side side) {
+Team* Battle::getTeam(Side side) const {
     if (side == Side::PLAYER) {
         return mTeamLeft;
     }
@@ -262,24 +258,24 @@ Team* Battle::getTeam(Side side) {
 }
 
 void Battle::applyEntranceEffectAbility(Team* team, Side side) {
-    if (!team->getActive()->isEnteredBattle() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
+    if (team->getActive()->isEnteredBattle() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
         return;
     }
     team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEntranceEffectHazards(Team* team, Side side) {
-    if (!team->getActive()->isEnteredBattle() || mField->getHazards(side)->isEmpty()) {
+    if (team->getActive()->isEnteredBattle() || mField->getHazards(side)->isEmpty()) {
         return;
     }
     mField->getHazards(side)->applyEffects(team->getActive());
 }
 
 void Battle::applyEntranceEffectItem(Team* team, Side side) {
-    if (!team->getActive()->isEnteredBattle() || team->getActive()->getItem() == nullptr) {
+    if (team->getActive()->isEnteredBattle() || !team->getActive()->hasItem() || team->getActive()->getItem()->getTiming() != When::ENTER) {
         return;
     }
-    // TODO
+    team->getActive()->getItem()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEndOfTurnEffectAbility(Team* team, Side side) {
@@ -287,6 +283,21 @@ void Battle::applyEndOfTurnEffectAbility(Team* team, Side side) {
         return;
     }
     team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
+}
+
+void Battle::applyEndOfTurnEffectItem(Team* team, Side side) {
+    if (!team->getActive()->hasItem() || team->getActive()->getItem()->getTiming() != When::STEP) {
+        return;
+    }
+    team->getActive()->getItem()->getEffect()->applyEffect(this, side);
+}
+
+void Battle::applyEndOfTurnEffectField() {
+    mField->step();
+}
+
+void Battle::applyEndOfTurnStatusEffects(Side side) const {
+    getTeam(side)->getActive()->stepStatusEffects();
 }
 
 void Battle::applyExitEffectAbility(Team* team, Side side) {

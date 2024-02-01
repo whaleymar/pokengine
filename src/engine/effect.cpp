@@ -77,4 +77,21 @@ void SetPriorityEffect::applyEffect(Battle* battle, Side side) const {
     battle->getTeam(side)->getActive()->setPriorityForNextMove(mPriority);
 }
 
+SetDamageEffect::SetDamageEffect(f32 damage) : Effect(EffectType::APPLY_DAMAGE), mDamage(damage){};
+
+void SetDamageEffect::applyEffect(Battle* battle, Side side) const {
+    battle->getTeam(side)->getActive()->takeDamage(mDamage);
+}
+
+SetHealingEffect::SetHealingEffect(f32 healAmount) : Effect(EffectType::APPLY_HEALING), mHealAmount(healAmount){};
+
+void SetHealingEffect::applyEffect(Battle* battle, Side side) const {
+    battle->getTeam(side)->getActive()->healDamage(mHealAmount);
+}
+
+// SetAttackBoostEffect::SetAttackBoostEffect(f32 boostAmount) : Effect(EffectType::BOOST_ATTACK), mBoostAmount(boostAmount){};
+//
+// void SetAttackBoostEffect::applyEffect(Battle* battle, Side side) const {
+//
+// }
 }  // namespace engine

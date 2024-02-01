@@ -26,6 +26,7 @@ enum class EffectType {
     SET_PRIORITY,
     APPLY_DAMAGE,
     APPLY_HEALING,
+    // TODO rethink this approach
     BOOST_ATTACK,    // sheer force / pure power`
     BOOST_DEFENSE,   // filter
     BOOST_SPDEFENSE  // ice scales
@@ -36,7 +37,8 @@ enum class EffectType {
 // sheer force is ATTACK_BEFORE, but with secondary effect requirement (and removes the effects)
 // ice scales is DEFEND_BEFORE, but checks whether the attacking move is physical or special
 // filter is DEFEND_BEFORE, but checks if incoming move is supereffective.
-enum class When { ENTER, EXIT, ATTACK_BEFORE, ATTACK_AFTER, DEFEND_BEFORE, DEFEND_AFTER, STEP };
+// I think the solution is to store conditions in an EffectHolder which are checked in addition to the When member
+enum class When { ENTER, EXIT, ATTACK_BEFORE, ATTACK_AFTER, DEFEND_BEFORE, DEFEND_AFTER, STEP, MANUAL };
 
 class Effect {
 private:
@@ -161,5 +163,33 @@ public:
     SetPriorityEffect(s8 priority);
     void applyEffect(Battle* battle, Side side) const override;
 };
+
+class SetDamageEffect : public Effect {
+private:
+    f32 mDamage;
+
+public:
+    SetDamageEffect(f32 damage);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+class SetHealingEffect : public Effect {
+private:
+    f32 mHealAmount;
+
+public:
+    SetHealingEffect(f32 healAmount);
+    void applyEffect(Battle* battle, Side side) const override;
+};
+
+// I don't like this approach
+// class SetAttackBoostEffect : public Effect {
+// private:
+//    f32 mBoostAmount;
+//
+// public:
+//    SetAttackBoostEffect(f32 boostAmount);
+//    void applyEffect(Battle* battle, Side side) const override;
+//};
 
 }  // namespace engine

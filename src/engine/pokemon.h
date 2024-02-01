@@ -225,6 +225,7 @@ public:
     void setStatus(Status status);
     bool hasVolatileStatus(VolatileStatus vStatus) const;
     void addVolatileStatus(VolatileStatus vStatus, BattlePokemon* sourceMon);
+    void stepStatusEffects();  // TODO
     void setPriorityForNextMove(s8 priority);
     s8 getPriorityForNextMove() const;
 

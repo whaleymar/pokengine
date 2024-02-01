@@ -65,11 +65,13 @@ private:
 
     void applyEntranceEffectAbility(Team* team, Side side);  // (intimidate)
     void applyEntranceEffectHazards(Team* team, Side side);  //
-    void applyEntranceEffectItem(Team* team, Side side);     // TODO (air ballon, terrain seeds)
+    void applyEntranceEffectItem(Team* team, Side side);     // (air ballon, terrain seeds)
     void applyEntranceEffects(Side side = Side::ALL);        // calls ^ for each side
 
     void applyEndOfTurnEffectAbility(Team* team, Side side);  // (speed boost, slow start)
-    void applyEndOfTurnEffectItem(Team* team, Side side);     // TODO (leftovers)
+    void applyEndOfTurnEffectItem(Team* team, Side side);     // (leftovers)
+    void applyEndOfTurnEffectField();
+    void applyEndOfTurnStatusEffects(Side side) const;
 
     void applyExitEffectAbility(Team* team, Side side);  // (unnerve)
 
@@ -96,7 +98,7 @@ public:
     bool simulateTurn();
     bool isBattleOver();
     Side getFastestSide();
-    Team* getTeam(Side side);
+    Team* getTeam(Side side) const;
     Weather getWeather();
     BattleField* getField();
     Barriers* getBarriers(Side side);
