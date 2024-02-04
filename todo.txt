@@ -1,14 +1,11 @@
-getting this running:
-- write/stub any functions needed to compile
-
 short term:
+- move builder, add some items and abilities
+- check sleep/freeze before attack
 - accuracy/evasion boosts
 - full logging
 - const correctness for most classes
-- singleton design pattern for Battle
-- Builder pattern for building pokemon (and any other class that has a ton of init args)
 - terastalization
-- methods for Effect subclasses
+- volatile effect methods
 
 medium term:
 - recoil

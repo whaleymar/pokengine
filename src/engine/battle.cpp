@@ -1,7 +1,9 @@
 #include "battle.h"
 
+#include <format>
 #include "ability.h"
 #include "effect.h"
+#include "engine/log.h"
 #include "field.h"
 #include "move.h"
 #include "pokemon.h"
@@ -25,6 +27,9 @@ BattlePokemon* Team::getActive() const {
 }
 
 void Team::addPokemon(Pokemon* pokemon) {
+    if (mSize > 5) {
+        return;
+    }
     mPokemon[mSize] = new BattlePokemon(pokemon);
     mSize++;
 }
@@ -39,9 +44,7 @@ bool Team::isValid() const {
 }
 
 void Team::faintPokemon() {
-    if (~isReady() || !getActive()->isAlive()) {
-        return;
-    }
+    BattleAnnouncer::fainted(getActive());
     mAliveCount--;
     mActive = -1;
 }
@@ -58,7 +61,9 @@ void Team::switchPokemonOut(s8 ix) {
     if (!mAliveCount) {
         return;
     }
-    getActive()->setInactive();
+    if (isReady()) {
+        getActive()->setInactive();
+    }
     mActive = ix;
     getActive()->setActive();
 }
@@ -173,8 +178,10 @@ void Battle::start() {
     mTurnNo++;
     bool battleEnded = false;
     while (!battleEnded) {
+        BattleAnnouncer::log(std::format("\nStarting Turn {}", mTurnNo));
         battleEnded = simulateTurn();
     }
+    BattleAnnouncer::logWinner(getWinner());
 }
 
 void Battle::endTurn() {
@@ -215,14 +222,17 @@ bool Battle::simulateTurn() {
             return true;
         }
 
-        applyAction(otherMove, Side::OTHER, Side::PLAYER);
+        if (getTeam(Side::OTHER)->isReady()) {
+            applyAction(otherMove, Side::OTHER, Side::PLAYER);
+        }
     } else {
         applyAction(otherMove, Side::OTHER, Side::PLAYER);
         if (isBattleOver()) {
             return true;
         }
-
-        applyAction(playerMove, Side::PLAYER, Side::OTHER);
+        if (getTeam(Side::PLAYER)->isReady()) {
+            applyAction(playerMove, Side::PLAYER, Side::OTHER);
+        }
     }
 
     if (isBattleOver()) {
@@ -238,8 +248,8 @@ bool Battle::isBattleOver() {
 }
 
 Side Battle::getFastestSide() {
-    s32 playerSpeed = mTeamLeft->getActive()->getStat(Stat::SPEED);
-    s32 otherSpeed = mTeamRight->getActive()->getStat(Stat::SPEED);
+    s32 playerSpeed = mTeamLeft->isReady() ? mTeamLeft->getActive()->getStat(Stat::SPEED) : -1;
+    s32 otherSpeed = mTeamRight->isReady() ? mTeamRight->getActive()->getStat(Stat::SPEED) : -1;
     if (playerSpeed == otherSpeed) {
         if (randint(0, 2) == 0) {
             return Side::PLAYER;
@@ -258,35 +268,36 @@ Team* Battle::getTeam(Side side) const {
 }
 
 void Battle::applyEntranceEffectAbility(Team* team, Side side) {
-    if (team->getActive()->isEnteredBattle() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
+    if (!team->isReady() || team->getActive()->isEnteredBattle() || team->getActive()->getAbility()->getTiming() != When::ENTER) {
         return;
     }
     team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEntranceEffectHazards(Team* team, Side side) {
-    if (team->getActive()->isEnteredBattle() || mField->getHazards(side)->isEmpty()) {
+    if (!team->isReady() || team->getActive()->isEnteredBattle() || mField->getHazards(side)->isEmpty()) {
         return;
     }
     mField->getHazards(side)->applyEffects(team->getActive());
 }
 
 void Battle::applyEntranceEffectItem(Team* team, Side side) {
-    if (team->getActive()->isEnteredBattle() || !team->getActive()->hasItem() || team->getActive()->getItem()->getTiming() != When::ENTER) {
+    if (!team->isReady() || team->getActive()->isEnteredBattle() || !team->getActive()->hasItem() ||
+        team->getActive()->getItem()->getTiming() != When::ENTER) {
         return;
     }
     team->getActive()->getItem()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEndOfTurnEffectAbility(Team* team, Side side) {
-    if (team->getActive()->getAbility()->getTiming() != When::STEP) {
+    if (!team->isReady() || team->getActive()->getAbility()->getTiming() != When::STEP) {
         return;
     }
     team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
 }
 
 void Battle::applyEndOfTurnEffectItem(Team* team, Side side) {
-    if (!team->getActive()->hasItem() || team->getActive()->getItem()->getTiming() != When::STEP) {
+    if (!team->isReady() || !team->getActive()->hasItem() || team->getActive()->getItem()->getTiming() != When::STEP) {
         return;
     }
     team->getActive()->getItem()->getEffect()->applyEffect(this, side);
@@ -297,14 +308,49 @@ void Battle::applyEndOfTurnEffectField() {
 }
 
 void Battle::applyEndOfTurnStatusEffects(Side side) const {
+    if (!getTeam(side)->isReady()) {
+        return;
+    }
     getTeam(side)->getActive()->stepStatusEffects();
 }
 
 void Battle::applyExitEffectAbility(Team* team, Side side) {
-    if (team->getActive()->getAbility()->getTiming() != When::EXIT) {
+    if (!team->isReady() || team->getActive()->getAbility()->getTiming() != When::EXIT) {
         return;
     }
     team->getActive()->getAbility()->getEffect()->applyEffect(this, side);
+}
+
+void Battle::applyBeforeAttackEffectAbility(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyBeforeAttackEffectItem(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyAfterAttackEffectAbility(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyAfterAttackEffectItem(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyBeforeDefendEffectAbility(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyBeforeDefendEffectItem(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyAfterDefendEffectAbility(Team* team, Side side) {
+    // TODO stubbed
+}
+
+void Battle::applyAfterDefendEffectItem(Team* team, Side side) {
+    // TODO stubbed
 }
 
 void Battle::applyAction(Action* move, Side user, Side target) {
@@ -327,13 +373,14 @@ void Battle::applyAction(Action* move, Side user, Side target) {
     move->execute(this, user, target);
 
     if (move->getActionType() == ActionType::ATTACK) {
-        applyAfterDefendEffectAbility(getTeam(target), target);
-        applyAfterDefendEffectItem(getTeam(target), target);
-
-        if (getTeam(target)->isReady()) {
-            applyAfterAttackEffectAbility(getTeam(user), user);
-            applyAfterAttackEffectItem(getTeam(user), user);
+        if (getTeam(target)->getActive()->isAlive()) {
+            applyAfterDefendEffectAbility(getTeam(target), target);
+            applyAfterDefendEffectItem(getTeam(target), target);
+        } else {
+            getTeam(target)->faintPokemon();
         }
+        applyAfterAttackEffectAbility(getTeam(user), user);
+        applyAfterAttackEffectItem(getTeam(user), user);
     } else if (move->getActionType() == ActionType::SWITCH) {
         applyEntranceEffects(user);
     }
@@ -363,4 +410,12 @@ Action* Battle::requestAction(Side side, bool canSwitch, bool canAttack) {
     return actionSet[randint(0, actionSet.size())];  // TODO stubbed random action
 }
 
+Side Battle::getWinner() const {
+    if (!getTeam(Side::PLAYER)->isReady()) {
+        return Side::OTHER;
+    } else if (!getTeam(Side::OTHER)->isReady()) {
+        return Side::PLAYER;
+    }
+    return Side::ALL;
+}
 }  // namespace engine

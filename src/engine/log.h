@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include "dtypes.h"
+#include "engine/field.h"
 
 namespace engine {
 
@@ -14,6 +15,9 @@ public:
     static void usedMove(Move* move, BattlePokemon* attacker, BattlePokemon* defender);
     static void switchedOut(BattlePokemon* switcher);
     static void sentOut(BattlePokemon* switchee);
+    static void fainted(BattlePokemon* pokemon);
+    static void logHealth(BattlePokemon* pokemon);
+    static void logWinner(Side side);
 
     static void failed();
     static void missed(BattlePokemon* defender);

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include "dtypes.h"
 #include "field.h"
 
@@ -14,6 +13,7 @@ enum class Status;
 enum class VolatileStatus;
 
 enum class EffectType {
+    NONE,
     STAT_BOOST,  // could do set_vstatus? not sure tbh
     WEATHER_START,
     TERRAIN_START,
@@ -45,8 +45,8 @@ private:
     EffectType mType;
 
 public:
-    Effect(EffectType type);
-    ~Effect() = default;
+    Effect(EffectType type) : mType(type){};
+    virtual ~Effect() = default;
 
     // virtual void applyEffect(BattleField* field, Side side, Team* team) const = 0;
     virtual void applyEffect(Battle* battle, Side side) const = 0;
@@ -59,7 +59,7 @@ private:
     const bool mCanChange;
 
 public:
-    EffectHolder(Effect* effect, When when, bool canChange);
+    EffectHolder(const Effect* effect, When when, bool canChange) : mEffect(effect), mWhen(when), mCanChange(canChange){};
     ~EffectHolder() = default;
 
     const Effect* getEffect() const { return mEffect; };
@@ -69,9 +69,13 @@ public:
 
 class NoEffect : public Effect {
 public:
-    NoEffect();
+    NoEffect() : Effect(EffectType::NONE){};
     void applyEffect(Battle* battle, Side side) const override{};
 };
+
+namespace constant {
+const NoEffect NO_EFFECT = NoEffect();
+}
 
 class StatEffect : public Effect {
 private:

@@ -25,7 +25,7 @@ protected:
 
 public:
     Action(){};
-    ~Action() = default;
+    //    ~Action() = default;
 
     ActionType getActionType() { return mActionType; };
     s8 getPriority() { return mPriority; };
@@ -45,15 +45,14 @@ protected:
     s32 mPower;
     f32 mAccuracy;
     s8 mMaxPp;
-    s8 mPriority;
-    Effect* mPrimaryEffect;
+    const Effect* mPrimaryEffect;
     MoveAttributes mAttributes;
     bool mIsPhysical;
     std::vector<EffectPair*> mSecondaryEffects;
 
 public:
-    MoveBase(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
-             s8 priority, bool isPhysical);
+    MoveBase(ActionType actionType, const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, const Effect* primaryEffect,
+             MoveAttributes attributes, s8 priority, bool isPhysical);
     ~MoveBase();
 
     const char* getName();
@@ -67,9 +66,8 @@ private:
     bool mIsDisabled = false;
 
 public:
-    Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
-         s8 priority = 0, bool isPhysical = false);
-    ~Move() = default;
+    Move(ActionType actionType, const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, const Effect* primaryEffect,
+         MoveAttributes attributes, s8 priority = 0, bool isPhysical = false);
 
     void resetPP();
     bool canUse();
@@ -79,7 +77,6 @@ public:
 class Switch : public Action {
 private:
     s8 mTargetIx;
-    s8 mPriority = SWITCH_PRIORITY;
 
 public:
     Switch(s8 targetIx);

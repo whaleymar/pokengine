@@ -3,5 +3,6 @@
 
 namespace engine {
 
-Ability::Ability(char* name, s32 ix, Effect* effect, When when, bool canChange) : EffectHolder(effect, when, canChange), mName(name), mIx(ix){};
+Ability::Ability(const char* name, s32 ix, const Effect* effect, When when, bool canChange)
+    : EffectHolder(effect, when, canChange), mName(name), mIx(ix){};
 }  // namespace engine

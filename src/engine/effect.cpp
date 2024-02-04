@@ -6,10 +6,6 @@
 
 namespace engine {
 
-Effect::Effect(EffectType type) : mType(type){};
-
-EffectHolder::EffectHolder(Effect* effect, When when, bool canChange) : mEffect(effect), mWhen(when), mCanChange(canChange){};
-
 StatEffect::StatEffect(Stat stat, s8 delta) : Effect(EffectType::STAT_BOOST), mStat(stat), mDelta(delta){};
 
 void StatEffect::applyEffect(Battle* battle, Side side) const {
@@ -67,7 +63,6 @@ void SetVolatileStatusEffect::applyEffect(Battle* battle, Side side) const {
 SetItemEffect::SetItemEffect(Item* item) : Effect(EffectType::SET_ITEM), mItem(item){};
 
 void SetItemEffect::applyEffect(Battle* battle, Side side) const {
-    Side otherSide = side == Side::PLAYER ? Side::OTHER : Side::PLAYER;
     battle->getTeam(side)->getActive()->setItem(mItem);
 }
 

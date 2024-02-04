@@ -1,4 +1,5 @@
 #include "log.h"
+#include <format>
 #include "move.h"
 #include "pokemon.h"
 #include "type.h"
@@ -18,6 +19,25 @@ void BattleAnnouncer::sentOut(BattlePokemon* switchee) {
     log(std::string(switchee->getName()) + " switched in");
 }
 
+void BattleAnnouncer::fainted(BattlePokemon* pokemon) {
+    log(std::string(pokemon->getName()) + " fainted");
+}
+
+void BattleAnnouncer::logHealth(BattlePokemon* pokemon) {
+    log(std::format("{}/{}", pokemon->getCurrentHp(), pokemon->getStat(Stat::HP)));
+}
+
+void BattleAnnouncer::logWinner(Side side) {
+    std::string str;
+    if (side == Side::ALL) {
+        str = "Tie";
+    } else if (side == Side::PLAYER) {
+        str = "Player 1 wins";
+    } else {
+        str = "Player 2 wins";
+    }
+    log("Battle Result: " + str);
+}
 void BattleAnnouncer::failed() {
     log("But it failed");
 }

@@ -69,6 +69,7 @@ enum class Status { NONE, PAR, BRN, FRZ, SLP, PSN, TOX };
  * some are attached to an opposing pokemon
  * some remain until the inflicting pokemon leaves
  * most remain until the affected pokemon leaves
+ * TODO they need a When member
  */
 enum class VolatileStatus {
     NONE,
@@ -127,14 +128,13 @@ public:
 enum class Sex { NONE, M, F };
 
 class PokemonSpecies {
-protected:
-    const char* mName;
+public:
+    std::string mName;
     const s32 mDexNo;
     const Stats mBaseStats;
     const Type mType;
     const s32 mWeight;
 
-public:
     PokemonSpecies(const char* name, const s32 dexNo, const Stats basestats, const Type type1, const Type type2, const s32 weight);
 };
 
@@ -149,7 +149,7 @@ private:
 
     Move** mMoves;
     Stats mStats;
-    Ability* mAbility;
+    const Ability* mAbility;
     Item* mItem;
 
     static f32 getNatureBoost(Nature nature, Stat stat);
@@ -160,7 +160,7 @@ private:
 
 public:
     Pokemon(const char* name, s32 dexNo, Stats basestats, Type type1, Type type2, s32 weight, s8 level, Nature nature, Stats ivs, Stats evs,
-            Ability* ability, Item* item, Sex sex, Type teraType, Move* move1, Move* move2, Move* move3, Move* move4);
+            const Ability* ability, Item* item, Sex sex, Type teraType, Move* move1, Move* move2, Move* move3, Move* move4);
     ~Pokemon();
 };
 
@@ -173,7 +173,7 @@ private:
     s8 mStatusTurns = 0;
     std::vector<VolatileStatusTracker*> mVolatileStatuses;
     Type mActiveType;
-    Ability* mActiveAbility;
+    const Ability* mActiveAbility;
     Item* mActiveItem;
     s8 mLastUsedMoveIx = -1;
     s8 mNextMovePriority = 0;
@@ -192,6 +192,7 @@ public:
 
     void resetVolatileEffects();
     s32 getStat(Stat statIx) const;
+    s32 getCurrentHp() const;
     s8 getStatBoostLevel(Stat statIx) const;
     f32 getStatBoostModifier(bool notAccuracyEvasion, s8 boostLevel) const;
     void boostStat(Stat statIx, s8 nStages);
@@ -208,7 +209,7 @@ public:
     void restore();
     bool isAlive() const;
     bool isTrapped() const;
-    Ability* getAbility() const;
+    const Ability* getAbility() const;
     bool isGrounded() const;
     void setActive();
     void setInactive();
@@ -225,12 +226,12 @@ public:
     void setStatus(Status status);
     bool hasVolatileStatus(VolatileStatus vStatus) const;
     void addVolatileStatus(VolatileStatus vStatus, BattlePokemon* sourceMon);
-    void stepStatusEffects();  // TODO
+    void stepStatusEffects();
     void setPriorityForNextMove(s8 priority);
     s8 getPriorityForNextMove() const;
 
     s8 getLevel() { return mPokemon->mLevel; };
-    const char* getName() { return mPokemon->mName; };
+    const char* getName() { return mPokemon->mName.c_str(); };
 };
 
 }  // namespace engine

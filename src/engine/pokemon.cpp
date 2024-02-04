@@ -1,4 +1,5 @@
 #include "pokemon.h"
+#include <cstring>
 #include "ability.h"
 #include "effect.h"
 #include "field.h"
@@ -19,9 +20,9 @@ PokemonSpecies::PokemonSpecies(const char* name, const s32 dexNo, const Stats ba
     : mName(name), mDexNo(dexNo), mBaseStats(basestats), mType(type1 | type2), mWeight(weight) {}
 
 Pokemon::Pokemon(const char* name, s32 dexNo, Stats basestats, Type type1, Type type2, s32 weight, s8 level, Nature nature, Stats ivs, Stats evs,
-                 Ability* ability, Item* item, Sex sex, Type teraType, Move* move1, Move* move2, Move* move3, Move* move4)
-    : mLevel(level), mNature(nature), mIvs(ivs), mEvs(evs), mAbility(ability), mItem(item), mSex(sex), mTeraType(teraType),
-      PokemonSpecies(name, dexNo, basestats, type1, type2, weight) {
+                 const Ability* ability, Item* item, Sex sex, Type teraType, Move* move1, Move* move2, Move* move3, Move* move4)
+    : PokemonSpecies(name, dexNo, basestats, type1, type2, weight), mLevel(level), mNature(nature), mIvs(ivs), mEvs(evs), mSex(sex),
+      mTeraType(teraType), mAbility(ability), mItem(item) {
     calcStats();
     mMoves = new Move* [4] { move1, move2, move3, move4 };
 }
@@ -66,7 +67,7 @@ BattlePokemon::~BattlePokemon() {
 }
 
 void BattlePokemon::resetVolatileEffects() {
-    for (s32 i = 0; i < mVolatileStatuses.size(); i++) {
+    for (u64 i = 0; i < mVolatileStatuses.size(); i++) {
         delete mVolatileStatuses[i];
     }
     mVolatileStatuses.clear();
@@ -88,6 +89,10 @@ s32 BattlePokemon::getStat(Stat statIx) const {
     case Stat::SPEED:
         return mPokemon->mStats.speed * getStatBoostModifier(true, getStatBoostLevel(Stat::SPEED));
     }
+}
+
+s32 BattlePokemon::getCurrentHp() const {
+    return mHp;
 }
 
 s8 BattlePokemon::getStatBoostLevel(Stat statIx) const {
@@ -206,6 +211,9 @@ void BattlePokemon::restore() {
     mHp = mPokemon->mStats.hp;
     resetType();
     for (s32 i = 0; i < MOVE_COUNT; i++) {
+        if (mPokemon->mMoves[i] == nullptr) {
+            continue;
+        }
         mPokemon->mMoves[i]->resetPP();
     }
     mActiveItem = mPokemon->mItem;
@@ -228,7 +236,7 @@ bool BattlePokemon::isTrapped() const {
     return mIsTrapped;
 }
 
-Ability* BattlePokemon::getAbility() const {
+const Ability* BattlePokemon::getAbility() const {
     return mActiveAbility;
 }
 
@@ -266,6 +274,9 @@ void BattlePokemon::setInactive() {
 
 bool BattlePokemon::isMoveUsable(s8 moveIx) const {
     // TODO check choice lock, encore, etc.
+    if (mPokemon->mMoves[moveIx] == nullptr) {
+        return false;
+    }
     return mPokemon->mMoves[moveIx]->canUse();
 }
 
@@ -299,6 +310,9 @@ Status BattlePokemon::getStatus() const {
 }
 
 void BattlePokemon::setStatus(Status status) {
+    if (status == Status::NONE) {
+        mStatusTurns = 0;
+    }
     mStatus = status;
 }
 
@@ -314,6 +328,31 @@ bool BattlePokemon::hasVolatileStatus(VolatileStatus vStatus) const {
 void BattlePokemon::addVolatileStatus(VolatileStatus vStatus, BattlePokemon* sourceMon) {
     VolatileStatusTracker* vStatusTracker = new VolatileStatusTracker(vStatus, sourceMon);
     mVolatileStatuses.push_back(vStatusTracker);
+}
+
+void BattlePokemon::stepStatusEffects() {
+    switch (mStatus) {
+    case Status::NONE:
+        break;
+    case Status::BRN:
+        takeDamage(1 / 16);
+        break;
+    case Status::PSN:
+        takeDamage(1 / 8);
+        break;
+    case Status::TOX:
+        takeDamage((1 + mStatusTurns) / 16);
+        break;
+    default:
+        break;
+    }
+    if (mStatus != Status::NONE) {
+        mStatusTurns++;
+    }
+    for (VolatileStatusTracker* vStatus : mVolatileStatuses) {
+        // TODO check if end of turn effect and apply...
+        vStatus->mTurns++;
+    }
 }
 
 void BattlePokemon::setPriorityForNextMove(s8 priority) {

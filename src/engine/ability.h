@@ -17,8 +17,13 @@ private:
     const s32 mIx;
 
 public:
-    Ability(char* name, s32 ix, Effect* effect, When when, bool canChange = true);
+    Ability(const char* name, s32 ix, const Effect* effect, When when, bool canChange = true);
     ~Ability() = default;
 };
 
+namespace constant {
+
+const Ability NO_ABILITY = Ability("None", 0, &NO_EFFECT, When::MANUAL, true);
+
+}
 }  // namespace engine

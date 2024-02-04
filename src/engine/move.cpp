@@ -1,21 +1,22 @@
-#pragma once
-
 #include "move.h"
+#include <format>
 #include "effect.h"
 #include "log.h"
 #include "type.h"
 
 namespace engine {
 
-MoveBase::MoveBase(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
-                   s8 priority, bool isPhysical)
-    : mName(name), mIx(ix), mType(type), mPower(power), mAccuracy(accuracy), mMaxPp(maxpp), mPriority(priority), mPrimaryEffect(primaryEffect),
-      mAttributes(attributes), mIsPhysical(isPhysical) {
+MoveBase::MoveBase(ActionType actionType, const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, const Effect* primaryEffect,
+                   MoveAttributes attributes, s8 priority, bool isPhysical)
+    : mName(name), mIx(ix), mType(type), mPower(power), mAccuracy(accuracy), mMaxPp(maxpp), mPrimaryEffect(primaryEffect), mAttributes(attributes),
+      mIsPhysical(isPhysical) {
+    mActionType = actionType;
+    mPriority = priority;
     mSecondaryEffects = std::vector<EffectPair*>();
 }
 
 MoveBase::~MoveBase() {
-    for (s32 i = 0; i < mSecondaryEffects.size(); i++) {
+    for (u64 i = 0; i < mSecondaryEffects.size(); i++) {
         delete mSecondaryEffects[i];
     }
 }
@@ -99,16 +100,16 @@ f32 MoveBase::calcDamage(Battle* battle, Side source, Side target) {
     }
 
     // TODO need to check abilities & if grounded
-    damage *= getEffectiveness(mType, targetMon->getType());
-
+    damage *= typeMultiplier;
+    BattleAnnouncer::effectiveness(typeMultiplier);
     // there are a bunch of other modifiers here, see bulbapedia
 
     return damage;
 }
 
-Move::Move(const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, Effect* primaryEffect, MoveAttributes attributes,
-           s8 priority, bool isPhysical)
-    : MoveBase(name, ix, type, power, accuracy, maxpp, primaryEffect, attributes, priority, isPhysical), mPp(maxpp) {}
+Move::Move(ActionType actionType, const char* name, const s32 ix, Type type, s32 power, f32 accuracy, s8 maxpp, const Effect* primaryEffect,
+           MoveAttributes attributes, s8 priority, bool isPhysical)
+    : MoveBase(actionType, name, ix, type, power, accuracy, maxpp, primaryEffect, attributes, priority, isPhysical), mPp(maxpp) {}
 
 void Move::resetPP() {
     mPp = mMaxPp;
@@ -119,11 +120,11 @@ bool Move::canUse() {
 }
 
 void Move::execute(Battle* battle, Side source, Side target) {
+    BattleAnnouncer::usedMove(this, battle->getTeam(source)->getActive(), battle->getTeam(target)->getActive());
     if (!battle->roll(mAccuracy)) {
         BattleAnnouncer::missed(battle->getTeam(target)->getActive());
         return;
     }
-    BattlePokemon* sourceMon = battle->getTeam(source)->getActive();
     BattlePokemon* targetMon = battle->getTeam(target)->getActive();
 
     if (mActionType == ActionType::ATTACK) {
@@ -131,6 +132,8 @@ void Move::execute(Battle* battle, Side source, Side target) {
         if (damage) {
             targetMon->takeDamage(damage);
         }
+        BattleAnnouncer::log(std::format("Did {} damage", damage));
+        BattleAnnouncer::logHealth(targetMon);
     } else {  // ActionType::STATUS
         mPrimaryEffect->applyEffect(battle, target);
     }
@@ -144,7 +147,10 @@ void Move::execute(Battle* battle, Side source, Side target) {
     mPp--;
 }
 
-Switch::Switch(s8 targetIx) : mTargetIx(targetIx){};
+Switch::Switch(s8 targetIx) : mTargetIx(targetIx) {
+    mActionType = ActionType::SWITCH;
+    mPriority = SWITCH_PRIORITY;
+};
 
 void Switch::execute(Battle* battle, Side source, Side target) {
     // source and target are the same
@@ -152,6 +158,7 @@ void Switch::execute(Battle* battle, Side source, Side target) {
     // not sure if I should check if trapped here. for now I'll assume I can switch
     Team* team = battle->getTeam(source);
     team->switchPokemonOut(mTargetIx);
+    BattleAnnouncer::sentOut(team->getActive());
 }
 
 }  // namespace engine

@@ -42,10 +42,13 @@ void Spikes::applyEffect(BattlePokemon* pokemon) {
     switch (mCount) {
     case 1:
         damage = 0.125;
+        break;
     case 2:
         damage = 1 / 6;
+        break;
     case 3:
         damage = 0.25;
+        break;
     default:
         damage = 0.125;
     }

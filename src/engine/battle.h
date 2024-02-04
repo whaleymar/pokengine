@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-#include <iostream>
 #include <random>
 #include <vector>
 #include "dtypes.h"
@@ -17,8 +15,11 @@ class Action;
 class Move;
 class Switch;
 
-const std::default_random_engine GENERATOR;
+namespace {
+std::random_device rd;
+std::mt19937 GENERATOR(rd());
 std::uniform_real_distribution<f32> UNIFORM_DIST(0.0, 1.0);
+}  // namespace
 
 class Team {
 private:
@@ -75,16 +76,15 @@ private:
 
     void applyExitEffectAbility(Team* team, Side side);  // (unnerve)
 
-    // TODO should pass the attack to these
-    void applyBeforeAttackEffectAbility(Team* team, Side side);  // TODO (protean)
-    void applyBeforeAttackEffectItem(Team* team, Side side);     // TODO
-    void applyAfterAttackEffectAbility(Team* team, Side side);   // TODO
-    void applyAfterAttackEffectItem(Team* team, Side side);      // TODO (life orb)
+    void applyBeforeAttackEffectAbility(Team* team, Side side);  // (protean)
+    void applyBeforeAttackEffectItem(Team* team, Side side);
+    void applyAfterAttackEffectAbility(Team* team, Side side);
+    void applyAfterAttackEffectItem(Team* team, Side side);  // (life orb)
 
-    void applyBeforeDefendEffectAbility(Team* team, Side side);  // TODO
-    void applyBeforeDefendEffectItem(Team* team, Side side);     // TODO (shuca berry)
-    void applyAfterDefendEffectAbility(Team* team, Side side);   // TODO (stamina, mummy)
-    void applyAfterDefendEffectItem(Team* team, Side side);      // TODO
+    void applyBeforeDefendEffectAbility(Team* team, Side side);
+    void applyBeforeDefendEffectItem(Team* team, Side side);    // (shuca berry)
+    void applyAfterDefendEffectAbility(Team* team, Side side);  // (stamina, mummy)
+    void applyAfterDefendEffectItem(Team* team, Side side);
 
     void applyAction(Action* move, Side user, Side target);
 
@@ -103,6 +103,7 @@ public:
     BattleField* getField();
     Barriers* getBarriers(Side side);
     Action* requestAction(Side side, bool canSwitch, bool canAttack);
+    Side getWinner() const;
 
     static f32 sample() { return UNIFORM_DIST(GENERATOR); };
     static bool roll(f32 probability) {
@@ -112,8 +113,8 @@ public:
         return probability >= sample();
     };
     static s32 randint(s32 min, s32 max) {
-        // returns random int between min and max (exclusive) // TODO make sure is exclusive
-        std::uniform_int_distribution<int> distribution(min, max);
+        // returns random int between min and max (exclusive)
+        std::uniform_int_distribution<int> distribution(min, max - 1);
         return distribution(GENERATOR);
     }
 };
